@@ -1,0 +1,86 @@
+ <!DOCTYPE html>
+<html>
+  <head>
+    <title>D3 - Axes - Create an axis</title>
+    <!-- <script type="text/javascript" src="d3/d3.min.js"></script>  -->
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+  </head>
+
+  <body>
+
+    <svg width="2000" height="1000">
+    </svg>
+
+        <script type="text/javascript">
+      var width = 1500;
+      var height = 500;
+      
+      var x = d3.scaleBand()
+      .rangeRound([0, width]);
+
+      var y = d3.scaleLinear()
+      .rangeRound([height, 0]);
+
+      var colors = ["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]
+      
+      d3.csv("census.csv", type,  function(error, data){
+        //data.sort(function(a, b) { return b.total - a.total; });
+        x.domain(data.map(function(d) { return d.State; }));
+        y.domain([0, d3.max(data, function(d) { return d.total; })]).nice();
+        //var xAxis = d3.axisLeft(xScale);
+        // var xAxis = d3.axisTop(xScale);
+        // var xAxis = d3.axisLeft(xScale);
+        // var xAxis = d3.axisRight(xScale);
+
+        d3.select('svg')
+          .append('g')
+          .attr("transform", "translate(50, 550)")
+          .call(d3.axisBottom(x));
+
+        d3.select('svg')
+          .append('g')
+          .attr("transform", "translate(50, 50)")
+          .call(d3.axisLeft(y).ticks(10, "s"));   
+
+        var newData = [];
+        data.forEach(function(d){
+              newData.push(d)
+            });
+
+        var stackGenerator = d3.stack()
+            //.keys(data.columns.slice(1));
+            .keys(data.columns.slice(1));        
+        // Create a g element for each series/layer
+        var g = d3.select('svg')
+          .selectAll('.series')
+          .data(stackGenerator(newData))
+          .enter().append('g')
+          .classed('series', true)
+          .attr('fill', function(d, i) {
+            return colors[i];
+          });
+
+        // For each series/layer create a rect element for each day
+        g.selectAll('rect')
+          .data(function(d) {
+            return d;
+          })
+          .enter().append('rect')
+          .attr("x", function(d) { return (x(d.data.State)+ 60);})
+          .attr("y", function(d) { return (y(d[1]) + 50);})
+          
+          .attr('width', 10)
+          .attr('height', function(d){
+              return y(d[0])-y(d[1]);
+          })
+          });        
+
+      function type(d, i, columns) {
+        for (i = 1, t = 0; i < columns.length; ++i) t += d[columns[i]] = +d[columns[i]];
+        d.total = t;
+        return d;
+      }
+        </script>
+
+  </body>
+</html>

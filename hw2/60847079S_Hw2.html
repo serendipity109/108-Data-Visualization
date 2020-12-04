@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <title>Hw2</title>
+</head>
+<body>
+    <input type="button" value='Homework 2-1' onclick="homeWork1or2(0)">
+    <input type="button" value='Homework 2-2' onclick="homeWork1or2(1)">
+    <svg width='2000' height='1000' id='Task1'>
+
+    </svg>
+</body>
+</html>
+<script>
+    var firstTime = true;
+    function homeWork1or2(value){
+        if (firstTime==false){
+            var svg = d3.select('svg');
+            svg.selectAll('g')
+            .remove();    
+        }
+        firstTime = false;
+        d3.csv('census.csv', function(error, data){
+            if (value=='1'){
+                var numberToShow = 20;
+                data.sort(function(a, b){
+                    var aResult = +(a[data.columns[1]])+(+(a[data.columns[2]]))+(+(a[data.columns[3]]))+(+(a[data.columns[4]]))+(+(a[data.columns[5]]))+(+(a[data.columns[6]]))+(+(a[data.columns[7]]));
+                    var bResult = +(b[data.columns[1]])+(+(b[data.columns[2]]))+(+(b[data.columns[3]]))+(+(b[data.columns[4]]))+(+(b[data.columns[5]]))+(+(b[data.columns[6]]))+(+(b[data.columns[7]]));
+                    
+                    return d3.descending(aResult, bResult);
+                });
+                
+            }else{
+                var numberToShow = +data.length;
+            }
+            var newData = [];
+            data.forEach(function(d){
+                if (numberToShow > 0){
+                    newData.push(d)
+                    numberToShow-=1;
+                }
+            });
+            
+            
+            var svg = d3.select('svg');
+            // var svg = d3.select('body').append('svg')
+            //     .attr('width', 2000)
+            //     .attr('height', 1000)
+            //     .attr('id', 'Task1');
+            
+            var State = newData.map(function(d){
+                return d.State
+            });
+            
+            let Task1 = document.getElementById('Task1')
+    
+            var colors = ["#F00E0E", "#FFA500", "#F0EF0E", "#7CF00E", "#0E69F0", "#5A0EF0", "#BA0EF0"]
+            
+            var stackGenerator = d3.stack()
+                //.keys(data.columns.slice(1));
+                .keys(data.columns.slice(1));
+                    
+            var g = d3.select('svg')
+                .selectAll('.series')
+                .data(stackGenerator(newData))
+                .enter().append('g')
+                .classed('series', true)
+                .attr('fill', function(d, i){
+                    return colors[i];
+                });
+            var maxValueArray = stackGenerator(newData)[6].map(function(d){
+                return d[1];
+            });
+
+            var maxValue = Math.max.apply(Math, maxValueArray);
+            
+            var y = d3.scaleLinear()
+                .domain([0, maxValue])
+                .range([Task1.attributes.height.value/2, 100]);
+            
+            var xAxis_scale = d3.scaleBand()
+                .domain(State)
+                .range([100, 1500])
+                .paddingOuter(0.7)
+                .paddingInner(0.8);
+                //.padding([0.7]);
+            var text = svg.append("text")
+                
+                .attr("display", "none")
+            var rects = g.selectAll('rect')
+                .data(function(d){
+                    return d;
+                })
+                .enter().append('rect')
+                .on("mouseover", function(d) {
+                    var x = d3.mouse(this)[0]
+                    var y = d3.mouse(this)[1]
+                    var population = d[1]-d[0];
+                    text.attr("display", null) 
+                        .attr("x", x + 20)
+                        .attr("y", y)
+                        .text(function(d, i){
+                            console.log(i)
+                            return'Population: '+population;
+                        })
+                })
+                .on("mouseout", function(){
+                    text.attr("display", "none")
+                })
+                .transition()
+                .delay(function(d) {
+                    return Math.random() * 1000;
+                })
+                .duration(1000)
+                .attr('x', function(d, i){
+                    return xAxis_scale(State[i]);
+                })
+                .attr('y', function(d){
+                    return y(d[1]);
+                })
+                
+                .attr('width', 10)
+                .attr('height', function(d){
+                    return y(d[0])-y(d[1]);
+                })
+                
+           
+                
+            var xAxis = d3.axisBottom(xAxis_scale)
+                .ticks(State.length);
+            var yAxis = d3.axisLeft(y)
+                .ticks(9);
+            
+            svg.append('g')
+                .attr('transform', 'translate(0 , 500)')
+                .call(xAxis);
+            
+            svg.append('g')
+                .attr('transform', 'translate(100, 0)')
+                .call(yAxis);
+        
+            var size = 10
+            svg.selectAll("mydots")
+                .data(data.columns.slice(1))
+                .enter()
+                .append("rect")
+                    
+                    .attr("x", 100)
+                    .attr("y", function(d,i){ return 100 + i*(size+5)}) 
+                    .attr("width", size)
+                    .attr("height", size)
+                    .style("fill", function(d, i){ return colors[i]})
+                .attr('transform', 'translate(1250, 0)')
+                
+            
+            svg.selectAll("mylabels")
+                .data(data.columns.slice(1))
+                .enter()
+                .append("text")
+                    .attr("x", 100 + size*1.2)
+                    .attr("y", function(d,i){ return 100 + i*(size+5) + (size/2)}) 
+                    .style("fill", function(d, i){ return colors[i]})
+                    .text(function(d){ return d})
+                    .attr("text-anchor", "left")
+                    .style("alignment-baseline", "middle")
+                .attr('transform', 'translate(1250, 0)');
+        });
+    }
+</script>
+
+
+
+<!-- var yAxis = d3.axisLeft(y)
+             .ticks(10);
+
+         svg.append('g')
+             .attr('transform', 'translate(90,80)')
+            .call(yAxis); -->
